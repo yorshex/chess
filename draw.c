@@ -1,5 +1,25 @@
 #include "chess.h"
 
+void draw_promotion_ui(const Chess *chess, Rectangle dest, Texture chessmen)
+{
+	float cell_w = dest.width / 4;
+	float cell_h = dest.height;
+
+	Rectangle rect = { 0, dest.y, ceilf(cell_w), ceilf(cell_h) };
+	Rectangle source = { 0, 0, chessmen.width, chessmen.width, };
+	float thick = roundf(fminf(cell_w, cell_h) * 0.066667);
+
+	for (int x = 0; x < 4; x++) {
+		rect.x = cell_w * x + dest.x;
+		source.y = chessmen.width * (x + 1);
+
+		DrawRectangleRec(rect, DARKGRAY);
+		DrawRectangleLinesEx(rect, thick, GRAY);
+		DrawTexturePro(chessmen, source, rect,
+				(Vector2){0}, 0.0, chess->hmoves % 2 ? BLACK : WHITE);
+	}
+}
+
 void draw_chessboard(const Chess *chess, Rectangle dest, Texture chessmen)
 {
 	float cell_w = dest.width / BOARD_COLS;

@@ -1,6 +1,6 @@
 #include "chess.h"
 
-void handle_mouse_input(Chess *chess, Rectangle board)
+void handle_lmb_chessboard(Chess *chess, Rectangle board)
 {
 	float cell_w = board.width / BOARD_COLS;
 	float cell_h = board.height / BOARD_ROWS;
@@ -29,4 +29,16 @@ void handle_mouse_input(Chess *chess, Rectangle board)
 
 	chess->sel_x = -1;
 	chess->sel_y = -1;
+}
+
+void handle_lmb_promotion(Chess *chess, Rectangle ui)
+{
+	float cell_w = ui.width / 4;
+	Vector2 mouse = GetMousePosition();
+
+	if (!CheckCollisionPointRec(mouse, ui)) return;
+
+	int x = iclamp(floorf((mouse.x - ui.x) / cell_w), 0, 3);
+
+	promote_pawn(chess, x);
 }

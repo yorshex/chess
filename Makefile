@@ -2,7 +2,7 @@ dir_guard=@mkdir -p $(@D)
 
 CC ?= gcc
 OBJDIR ?= obj
-CFLAGS=-std=c99 -I./raylib/src
+CFLAGS=-std=c99 -Wall -Wextra -Wparentheses -I./raylib/src
 LIBS=-l:libraylib.a -lm
 OBJ=chess.o \
 	draw.o \

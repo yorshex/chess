@@ -7,9 +7,6 @@
 #include <math.h>
 #include <raylib.h>
 
-static const char *CHESS_INIT_FEN =
-	"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
 #define BOARD_ROWS 8
 #define BOARD_COLS 8
 #define BOARD_LEN (BOARD_ROWS*BOARD_COLS)
@@ -31,6 +28,7 @@ typedef struct {
 	int hmove_clock;
 	int hmoves;
 	int sel_x, sel_y;
+	int prom_x, prom_y;
 } Chess;
 
 // util.c
@@ -42,18 +40,21 @@ int get_piece_index(char piece);
 
 // logic.c
 int is_figurine_char(int c);
-bool is_there_obstacle(const Chess *chess, int x0, int y0, int n, int sx, int sy);
-bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y);
-bool is_move_legal(const Chess *chess, int x0, int y0, int x, int y);
-bool perform_move(Chess* chess, int x0, int y0, int x, int y);
+int is_there_obstacle(const Chess *chess, int x0, int y0, int n, int sx, int sy);
+int is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y);
+int is_move_legal(const Chess *chess, int x0, int y0, int x, int y);
+int perform_move(Chess *chess, int x0, int y0, int x, int y);
+int promote_pawn(Chess *chess, int option);
 
 // input.c
-void handle_mouse_input(Chess *chess, Rectangle board);
+void handle_lmb_chessboard(Chess *chess, Rectangle board);
+void handle_lmb_promotion(Chess *chess, Rectangle ui);
 
 // fen_to_chess.c
 int fen_to_chess(const char *fen, Chess *chess);
 
 // draw.c
 void draw_chessboard(const Chess *chess, Rectangle dest, Texture chessmen);
+void draw_promotion_ui(const Chess *chess, Rectangle dest, Texture chessmen);
 
 #endif // _chess_h

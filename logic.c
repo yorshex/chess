@@ -14,18 +14,18 @@ int is_figurine_char(int c)
 	return 0;
 };
 
-bool is_there_obstacle(const Chess *chess, int x0, int y0, int n, int sx, int sy)
+int is_there_obstacle(const Chess *chess, int x0, int y0, int n, int sx, int sy)
 {
 	for (int i = 1; i < n; i++) {
 		int x = x0 + i * sx;
 		int y = y0 + i * sy;
 		char piece = CHESS_AT(chess, x, y);
-		if (is_figurine_char(piece)) return true;
+		if (is_figurine_char(piece)) return 1;
 	}
-	return false;
+	return 0;
 }
 
-bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
+int is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
 {
 	char piece = CHESS_AT(chess, x0, y0);
 	char tp = CHESS_AT(chess, x, y); // target piece
@@ -34,15 +34,15 @@ bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
 	int dy = y - y0;
 
 	if (x < 0 || x >= BOARD_COLS || y < 0 || y >= BOARD_ROWS)
-		return false;
+		return 0;
 
-	if (!is_figurine_char(piece)) return false;
+	if (!is_figurine_char(piece)) return 0;
 
 	if (is_figurine_char(tp) && (bool)islower(piece) == (bool)islower(tp))
-		return false;
+		return 0;
 
 	if (dx == 0 && dy == 0)
-		return false;
+		return 0;
 
 	int side = islower(piece);
 
@@ -60,7 +60,7 @@ bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
 					x == chess->passed_x &&
 					y == chess->passed_y &&
 					islower(CHESS_AT(chess, chess->passed_x, chess->passed_y+1));
-			return false;
+			return 0;
 
 		case 'p':
 			if (dx == 0 && dy == 1)
@@ -73,11 +73,11 @@ bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
 					x == chess->passed_x &&
 					y == chess->passed_y &&
 					isupper(CHESS_AT(chess, chess->passed_x, chess->passed_y-1));
-			return false;
+			return 0;
 
 		case 'K':
-			if (dx <= 1 && dx >= -1 && dy <= 1 && dy >= -1) return true;
-			if (dy != 0 || abs(dx) != 2) return false;
+			if (dx <= 1 && dx >= -1 && dy <= 1 && dy >= -1) return 1;
+			if (dy != 0 || abs(dx) != 2) return 0;
 			int castle_avail = SGN(dx) > 0 ?
 				(side ? CA_BK : CA_WK) : (side ? CA_BQ : CA_WQ);
 			return chess->castle_avail & castle_avail &&
@@ -88,23 +88,25 @@ bool is_move_legal_unsafe(const Chess *chess, int x0, int y0, int x, int y)
 				abs(dx) == 1 && abs(dy) == 2;
 
 		case 'R':
-			if (!(dx == 0 || dy == 0)) return false;
+			if (!(dx == 0 || dy == 0)) return 0;
 			return !is_there_obstacle(chess, x0, y0,
 					abs(dx ? dx : dy), SGN(dx), SGN(dy));
 
 		case 'B':
-			if (abs(dx) != abs(dy)) return false;
+			if (abs(dx) != abs(dy)) return 0;
 			return !is_there_obstacle(chess, x0, y0,
 					abs(dx ? dx : dy), SGN(dx), SGN(dy));
 
 		case 'Q':
-			if (!(dx == 0 || dy == 0 || abs(dx) == abs(dy))) return false;
+			if (!(dx == 0 || dy == 0 || abs(dx) == abs(dy))) return 0;
 			return !is_there_obstacle(chess, x0, y0,
 					abs(dx ? dx : dy), SGN(dx), SGN(dy));
+		default:
+			return 0;
 	}
 }
 
-bool is_king_safe(const Chess *chess, int side)
+int is_king_safe(const Chess *chess, int side)
 {
 	char king_char = side ? 'k' : 'K';
 	int king_x, king_y;
@@ -121,38 +123,37 @@ bool is_king_safe(const Chess *chess, int side)
 	}
 
 	if (i >= BOARD_ROWS * BOARD_COLS)
-		return true;
+		return 1;
 
 	for (i = 0; i < BOARD_ROWS * BOARD_COLS; i++) {
 		int x = i % BOARD_COLS;
 		int y = i / BOARD_COLS;
 		bool incheck = is_move_legal_unsafe(chess, x, y, king_x, king_y);
-		if (incheck) return false;
+		if (incheck) return 0;
 	}
 
-	return true;
+	return 1;
 }
 
-bool is_move_legal(const Chess *chess, int x0, int y0, int x, int y)
+int is_move_legal(const Chess *chess, int x0, int y0, int x, int y)
 {
 	if (!is_move_legal_unsafe(chess, x0, y0, x, y))
-		return false;
+		return 0;
 
 	char piece = CHESS_AT(chess, x0, y0);
 
 	int dx = x - x0;
-	int dy = y - y0;
 
 	Chess prechess;
 
 	if (toupper(piece) == 'K' && abs(dx) == 2) {
 		if (!is_king_safe(chess, chess->hmoves % 2))
-			return false;
+			return 0;
 
 		prechess = *chess;
 		CHESS_MOVE(&prechess, x0, y0, x0+SGN(dx), y0);
 		if (!is_king_safe(&prechess, prechess.hmoves % 2))
-			return false;
+			return 0;
 	}
 
 	prechess = *chess;
@@ -161,9 +162,9 @@ bool is_move_legal(const Chess *chess, int x0, int y0, int x, int y)
 	return is_king_safe(&prechess, prechess.hmoves % 2);
 }
 
-bool perform_move(Chess* chess, int x0, int y0, int x, int y)
+int perform_move(Chess* chess, int x0, int y0, int x, int y)
 {
-	if (!is_move_legal(chess, x0, y0, x, y)) return false;
+	if (!is_move_legal(chess, x0, y0, x, y)) return 0;
 
 	char piece = CHESS_AT(chess, x0, y0);
 
@@ -187,7 +188,12 @@ bool perform_move(Chess* chess, int x0, int y0, int x, int y)
 	}
 
 	CHESS_MOVE(chess, x0, y0, x, y);
-	chess->hmoves++;
+	if (toupper(piece) == 'P' && (y == 7 || y == 0)) {
+		chess->prom_x = x;
+		chess->prom_y = y;
+	}
+	else
+		chess->hmoves++;
 
 #define CASTLE_AVAIL_CHECK(x, y, avail) \
 	do { \
@@ -204,5 +210,28 @@ bool perform_move(Chess* chess, int x0, int y0, int x, int y)
 
 #undef CASTLE_AVAIL_CHECK
 
-	return true;
+	return 1;
+}
+
+int promote_pawn(Chess *chess, int opt)
+{
+	static char pieces[4] = { 'R', 'K', 'B', 'Q' };
+
+	if (opt < 0 || opt > 3)
+		return 0;
+
+	if (CHESS_IS_POS_OUT(chess->prom_x, chess->prom_y))
+		return 0;
+
+	char piece = pieces[opt];
+	if (chess->hmoves % 2)
+		piece = tolower(piece);
+
+	CHESS_AT(chess, chess->prom_x, chess->prom_y) = piece;
+
+	chess->hmoves++;
+	chess->prom_x = -1;
+	chess->prom_y = -1;
+
+	return 1;
 }
